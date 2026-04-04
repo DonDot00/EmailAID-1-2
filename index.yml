@@ -3,6 +3,16 @@ id: course1
 title: EmailAID@
 level: beginner
 description: Email assistant project
+objectives: |
+  Learn:
+  OOP
+  Decorators
+  Generators
+  virtual environments
+  APIs
+  NumPy/Pandas
+  testing 
+  async basics.
 cardImageUrl: https://vscodeedu.com/assets/course-cards/card6.png
 contacts:
   - displayName: Donovan Raymond
