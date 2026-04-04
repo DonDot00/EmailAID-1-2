@@ -3,7 +3,7 @@ id: course1
 title: EmailAID@
 level: beginner
 description: Email assistant project
-objectives: |
+objectives: |-
   Learn:
   OOP
   Decorators
