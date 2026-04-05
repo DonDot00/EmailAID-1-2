@@ -46,6 +46,8 @@ class OutlookClient:
         return response.json().get("value", [])
 
 
+
+
 if __name__ == "__main__":
     client = OutlookClient()
     emails = client.get_emails()
