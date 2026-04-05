@@ -1,58 +1,55 @@
-import os
-import requests
-from dotenv import load_dotenv
 import msal
-
-load_dotenv()
-
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-TENANT_ID = os.getenv("TENANT_ID")
-
-AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
-SCOPE = ["https://graph.microsoft.com/.default"]
+import requests
 
 
 class OutlookClient:
     def __init__(self):
-        self.app = msal.ConfidentialClientApplication(
-            CLIENT_ID,
-            authority=AUTHORITY,
-            client_credential=CLIENT_SECRET
+        self.client_id = "52cef69b-e50a-40ef-a4aa-34e1fceb209e"
+        self.tenant_id = "12fd9da4-2a17-4ab0-af0d-e5e5e3af03b9"
+
+        self.authority = f"https://login.microsoftonline.com/{self.tenant_id}"
+        self.scopes = ["Mail.Read"]
+
+        self.token = None
+
+        self.app = msal.PublicClientApplication(
+            self.client_id,
+            authority=self.authority
         )
 
-    def get_access_token(self):
-        result = self.app.acquire_token_for_client(scopes=SCOPE)
+    def authenticate(self):
+        flow = self.app.initiate_device_flow(scopes=self.scopes)
 
-        if "access_token" in result:
-            return result["access_token"]
-        else:
-            raise Exception(f"Token error: {result}")
+        if "user_code" not in flow:
+            raise Exception(f"Device flow failed: {flow}")
 
-    def get_emails(self, top=10):
-        token = self.get_access_token()
+        print("\n=== LOGIN REQUIRED ===")
+        print(flow["message"])
+
+        result = self.app.acquire_token_by_device_flow(flow)
+
+        if "access_token" not in result:
+            raise Exception(f"Auth failed: {result}")
+
+        self.token = result["access_token"]
+        print("✅ Logged in successfully!")
+
+    def get_emails(self, top=5):
+        if not self.token:
+            raise Exception("Not authenticated")
 
         headers = {
-            "Authorization": f"Bearer {token}"
+            "Authorization": f"Bearer {self.token}"
         }
 
-        url = f"https://graph.microsoft.com/v1.0/me/messages?$top={top}"
-
-        response = requests.get(url, headers=headers)
+        response = requests.get(
+            f"https://graph.microsoft.com/v1.0/me/messages?$top={top}",
+            headers=headers
+        )
 
         if response.status_code != 200:
-            raise Exception(response.text)
+            print(response.text)
+            raise Exception("API error")
 
         return response.json().get("value", [])
-
-
-
-
-if __name__ == "__main__":
-    client = OutlookClient()
-    emails = client.get_emails()
-
-    for email in emails:
-        print("Subject:", email.get("subject"))
-        print("From:", email.get("from", {}).get("emailAddress", {}).get("address"))
-        print("-" * 40)
+        
